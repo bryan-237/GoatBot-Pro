@@ -1,113 +1,115 @@
 module.exports = {
   config: {
     name: "join",
-    aliases: ["boxlist", "allbox"],
-    version: "1.5.0",
-    author: "MOHAMMAD AKASH",
-    role: 2,
-    shortDescription: "Paginated active group list & add yourself",
-    category: "system",
-    countDown: 10
+    version: "4.0",
+    author: "Big Bryan",
+    countDown: 5,
+    role: 2, // 2 = Bot Admin only
+    dev: true,
+    shortDescription: { en: "List groups + get join link" },
+    description: { en: "Paginated group list. Reply with number to get invite link" },
+    category: "owner",
+    guide: { en: "{p}{n} [page|next|prev]" }
   },
 
-  onStart: async function ({ api, event }) {
-    const { threadID, messageID, senderID } = event;
-    const perPage = 10;
-
+  onStart: async function ({ api, event, args, threadsData }) {
     try {
-      // সর্বোচ্চ 50 থ্রেড ফেচ করা
-      const allThreads = await api.getThreadList(50, null, ["INBOX"]);
+      const { threadID } = event;
+      const prefix = await threadsData.get(threadID, "data.prefix") || global.GoatBot.config.prefix || "?";
 
-      // শুধু ACTIVE গ্রুপ
-      const groups = allThreads.filter(t => t.isGroup && t.isSubscribed);
-      if (!groups.length) 
-        return api.sendMessage("⚠️ Bot is not currently in any group.", threadID, messageID);
+      const groupList = await api.getThreadList(100, null, ["INBOX"]);
+      const filteredList = groupList.filter(g => g.isGroup && g.isSubscribed);
+      if (!filteredList.length) return api.sendMessage("❌ No group found.", threadID);
 
-      const page = 1;
-      const start = (page - 1) * perPage;
-      const end = start + perPage;
-      const currentGroups = groups.slice(start, end);
+      const pageSize = 10;
+      const totalPages = Math.ceil(filteredList.length / pageSize);
+      if (!global.joinPage) global.joinPage = {};
 
-      let msg = `📦 | 𝙱𝙾𝚇 𝙻𝙸𝚂𝚃 (𝙿𝙰𝙶𝙴 ${page})\n\n`;
-      currentGroups.forEach((g, i) => {
-        msg += `${start + i + 1}. ${g.name || "Unnamed Group"}\n`;
-        msg += `🆔 ${g.threadID}\n\n`;
+      let page = 1;
+      if (args[0]) {
+        const input = args[0].toLowerCase();
+        if (input === "next") page = (global.joinPage[threadID] || 1) + 1;
+        else if (input === "prev") page = (global.joinPage[threadID] || 1) - 1;
+        else page = parseInt(input) || 1;
+      }
+      if (page < 1) page = 1;
+      if (page > totalPages) page = totalPages;
+      global.joinPage[threadID] = page;
+
+      const startIndex = (page - 1) * pageSize;
+      const currentGroups = filteredList.slice(startIndex, startIndex + pageSize);
+
+      const formatted = currentGroups.map((g, i) =>
+        `┃ ${startIndex + i + 1}. ${g.threadName || "Unnamed Group"}\n┃ 👥 ${g.participantIDs.length} members\n┃`
+      ).join("\n");
+
+      const body = [
+        "╭─────────────❃",
+        "│ 🤝 GROUP LIST",
+        "│──────────────────",
+        formatted,
+        "│──────────────────",
+        `│ 📄 Page ${page}/${totalPages} | Total: ${filteredList.length}`,
+        "│ ⚠️ Facebook blocks direct add. Use invite link.",
+        "╰───────────────✦",
+        ``,
+        `👉 Reply with the number to get invite link.`
+      ].join("\n");
+
+      const sentMessage = await api.sendMessage(body, threadID);
+      global.GoatBot.onReply.set(sentMessage.messageID, {
+        commandName: "join",
+        author: event.senderID,
+        list: filteredList,
+        page,
+        pageSize
       });
-
-      msg += "↩️ Rᴇᴘʟʏ Wɪᴛʜ: ᴀᴅᴅ 1 | ᴀᴅᴅ 2 5\n➡️ Oʀ ᴘᴀɢᴇ 2 ... Tᴏ sᴇᴇ Mᴏʀᴇ Gʀᴏᴜᴘs";
-
-      api.sendMessage(msg.trim(), threadID, (err, info) => {
-        global.GoatBot.onReply.set(info.messageID, {
-          commandName: this.config.name,
-          author: senderID,
-          groups,
-          page,
-          perPage
-        });
-      }, messageID);
 
     } catch (e) {
       console.error(e);
-      api.sendMessage("❌ Failed to fetch active group list.", threadID, messageID);
+      api.sendMessage("⚠️ Error getting group list.", event.threadID);
     }
   },
 
   onReply: async function ({ api, event, Reply }) {
-    if (event.senderID !== Reply.author) return;
+    const { author, list, page, pageSize } = Reply;
+    if (event.senderID!== author) return;
 
-    const args = event.body.trim().toLowerCase().split(/\s+/);
-    const perPage = Reply.perPage || 10;
-
-    // PAGE কমান্ড
-    if (args[0] === "page") {
-      const pageNum = parseInt(args[1]);
-      if (isNaN(pageNum) || pageNum < 1) return api.sendMessage("❌ Invalid page number", event.threadID);
-
-      const start = (pageNum - 1) * perPage;
-      const end = start + perPage;
-      const currentGroups = Reply.groups.slice(start, end);
-
-      if (!currentGroups.length) return api.sendMessage("⚠️ No more groups", event.threadID);
-
-      let msg = `📦 | 𝙱𝙾𝚇 𝙻𝙸𝚂𝚃 (𝙿𝙰𝙶𝙴 ${pageNum})\n\n`;
-      currentGroups.forEach((g, i) => {
-        msg += `${start + i + 1}. ${g.name || "Unnamed Group"}\n`;
-        msg += `🆔 ${g.threadID}\n\n`;
-      });
-      msg += `↩️ Rᴇᴘʟʏ Wɪᴛʜ: Aᴅᴅ 1 | Aᴅᴅ 2 5\n➡️ Oʀ Pᴀɢᴇ ${pageNum + 1} ... to see more groups`;
-
-      api.sendMessage(msg.trim(), event.threadID, (err, info) => {
-        global.GoatBot.onReply.set(info.messageID, {
-          commandName: Reply.commandName,
-          author: Reply.author,
-          groups: Reply.groups,
-          page: pageNum,
-          perPage
-        });
-      });
-      return;
+    const groupIndex = parseInt(event.body, 10);
+    if (isNaN(groupIndex) || groupIndex <= 0) {
+      return api.sendMessage("⚠️ Invalid number.", event.threadID, event.messageID);
     }
 
-    // ADD কমান্ড
-    if (args[0] === "add") {
-      const addUserToGroup = async (uid, tid, name) => {
-        try {
-          await api.addUserToGroup(uid, tid);
-          await api.sendMessage(`✅ Aᴅᴅᴇᴅ Yᴏᴜ Tᴏ: ${name}`, event.threadID);
-        } catch {
-          await api.sendMessage(`❌ Fᴀɪʟᴅ Tᴏ Aᴅᴅ Yᴏᴜ ᴛᴏ: ${name}`, event.threadID);
-        }
-      };
+    const startIndex = (page - 1) * pageSize;
+    const currentGroups = list.slice(startIndex, startIndex + pageSize);
+    if (groupIndex > currentGroups.length) {
+      return api.sendMessage("⚠️ Number out of range.", event.threadID, event.messageID);
+    }
 
-      for (let i = 1; i < args.length; i++) {
-        const index = parseInt(args[i]) - 1;
-        if (isNaN(index) || index < 0 || index >= Reply.groups.length) {
-          await api.sendMessage(`❌ Iɴᴠᴀʟɪᴅ Nᴜᴍʙᴇʀ: ${args[i]}`, event.threadID);
-          continue;
-        }
-        const g = Reply.groups[index];
-        await addUserToGroup(event.senderID, g.threadID, g.name || "Unnamed Group");
+    try {
+      const selected = currentGroups[groupIndex - 1];
+      const groupID = selected.threadID;
+      const members = await api.getThreadInfo(groupID);
+
+      if (members.participantIDs.includes(event.senderID)) {
+        return api.sendMessage(`⚠️ You are already in 『${selected.threadName}』`, event.threadID, event.messageID);
       }
+      if (members.participantIDs.length >= 250) {
+        return api.sendMessage(`🚫 Group full: 『${selected.threadName}』`, event.threadID, event.messageID);
+      }
+
+      // Messenger n'a plus de lien auto. Donc on demande à un admin de te rajouter
+      await api.sendMessage(
+        `📨 Demande d'ajout pour ${event.senderID}\nGroupe: ${selected.threadName}\nID: ${groupID}\n\nUn admin doit t'ajouter manuellement.`,
+        groupID
+      );
+      api.sendMessage(`✅ Demande envoyée aux admins de 『${selected.threadName}』\nFB bloque l'ajout auto depuis 2024.`, event.threadID, event.messageID);
+
+    } catch (e) {
+      console.error(e);
+      api.sendMessage("⚠️ Failed. The bot must be admin of that group.", event.threadID, event.messageID);
+    } finally {
+      global.GoatBot.onReply.delete(event.messageID);
     }
   }
 };
