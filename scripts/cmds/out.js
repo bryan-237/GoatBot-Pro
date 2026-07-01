@@ -8,6 +8,7 @@ module.exports = {
     version: "1.0.0",
     nashPrefix: false,
     cooldowns: 5,
+
     async execute(api, event) {
         const { threadID, messageID, senderID } = event;
         const adminUID = '61581453916589';
