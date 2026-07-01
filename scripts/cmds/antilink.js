@@ -13,10 +13,10 @@ const linkPatterns = [
 module.exports = {
   config: {
     name: "antilink",
-    version: "1.2",
+    version: "1.3",
     author: "BRYAN SABIN",
     countDown: 0,
-    role: 1, // GoatBot exige automatiquement que l'expéditeur soit admin du groupe pour onStart
+    role: 1, // GoatBot check admin automatiquement pour onStart
     description: "Auto kick anti link social media",
     category: "admin",
     guide: {
@@ -29,11 +29,16 @@ module.exports = {
       needArgs: "Usage: %1 on / off / delete",
       onSuccess: "✅ AntiLink ON: all networks enabled (kick)",
       deleteSuccess: "🗑️ AntiLink set to delete-only mode (no kick)",
-      offSuccess: "❌ AntiLink OFF"
+      offSuccess: "❌ AntiLink OFF",
+      noThreadID: "⚠️ Impossible de récupérer l'ID de ce chat, réessaie."
     }
   },
 
-  onStart: async function ({ message, args, threadsData, getLang }) {
+  onStart: async function ({ message, args, threadsData, event, getLang }) {
+    // Fallback multi-sources : évite le crash INVALID_THREAD_ID
+    const threadID = event?.threadID || message?.threadID;
+    if (!threadID) return message.reply(getLang("noThreadID"));
+
     if (!args[0]) return message.reply(getLang("needArgs", this.config.name));
 
     const action = args[0].toLowerCase();
@@ -41,17 +46,17 @@ module.exports = {
     if (action === "on") {
       const update = { delete: false };
       for (const link of linkPatterns) update[link.key] = true;
-      await threadsData.set(message.threadID, update, "data");
+      await threadsData.set(threadID, update, "data");
       return message.reply(getLang("onSuccess"));
     }
 
     if (action === "delete") {
-      await threadsData.set(message.threadID, { delete: true }, "data");
+      await threadsData.set(threadID, { delete: true }, "data");
       return message.reply(getLang("deleteSuccess"));
     }
 
     if (action === "off") {
-      await threadsData.set(message.threadID, {}, "data");
+      await threadsData.set(threadID, {}, "data");
       return message.reply(getLang("offSuccess"));
     }
 
@@ -59,15 +64,24 @@ module.exports = {
   },
 
   onChat: async function ({ api, event, threadsData }) {
-    const { threadID, senderID, body, messageID } = event;
-    if (!body) return;
+    const threadID = event?.threadID;
+    const { senderID, body, messageID } = event || {};
+
+    // Guard renforcé : coupe court si les données essentielles manquent
+    if (!threadID || !body || !senderID) return;
     if (senderID === api.getCurrentUserID()) return;
 
-    const threadData = await threadsData.get(threadID);
+    let threadData;
+    try {
+      threadData = await threadsData.get(threadID);
+    } catch (e) {
+      console.log("antilink onChat - threadsData.get failed:", e.message);
+      return;
+    }
+
     const adminIDs = threadData.adminIDs || [];
     const botID = api.getCurrentUserID();
 
-    // Bypass: sender is group admin | Bot must be group admin to enforce kicks
     if (adminIDs.includes(senderID) || !adminIDs.includes(botID)) return;
 
     const chat = threadData.data || {};
@@ -99,4 +113,4 @@ async function handleViolation(api, { threadID, messageID, senderID, label, dele
   } catch (e) {
     console.log("Kick failed:", e.message);
   }
-}
+      }
