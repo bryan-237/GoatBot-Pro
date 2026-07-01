@@ -1,106 +1,176 @@
-const { commands, aliases } = global.GoatBot;
-
-// --- Fonction 𝑨𝒁 Style ---
-function toAZStyle(text) {
-  const azMap = {
-    A:'𝑨', B:'𝑩', C:'𝑪', D:'𝑫', E:'𝑬', F:'𝑭', G:'𝑮', H:'𝑯', I:'𝑰', J:'𝑱', K:'𝑲', L:'𝑳', M:'𝑴',
-    N:'𝑵', O:'𝑶', P:'𝑷', Q:'𝑸', R:'𝑹', S:'𝑺', T:'𝑻', U:'𝑼', V:'𝑽', W:'𝑾', X:'𝑿', Y:'𝒀', Z:'𝒁',
-    a:'𝒂', b:'𝒃', c:'𝒄', d:'𝒅', e:'𝒆', f:'𝒇', g:'𝒈', h:'𝒉', i:'𝒊', j:'𝒋', k:'𝒌', l:'𝒍', m:'𝒎',
-    n:'𝒏', o:'𝒐', p:'𝒑', q:'𝒒', r:'𝒓', s:'𝒔', t:'𝒕', u:'𝒖', v:'𝒗', w:'𝒘', x:'𝒙', y:'𝒚', z:'𝒛',
-    '0':'0','1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9', ' ':' '
-  };
-  return text.split('').map(c => azMap[c] || c).join('');
-}
-
 module.exports = {
   config: {
     name: "help",
-    version: "5.3",
-    author: "Big Bryan",
-    countDown: 2,
+    version: "2.0.1",
+    author: "Grandpa EJ",
+    countDown: 5,
     role: 0,
-    shortDescription: { en: "Explore all bot commands" },
-    description: { en: "Show command list, info, and AI search" },
-    category: "info",
-    guide: { en: "{pn} <command> | -ai <keyword> | -s <keyword>" }
+    shortDescription: { en: "Beginner's Guide" },
+    description: { en: "Shows all commands and command info" },
+    category: "guide",
+    guide: { en: "{pn} [command|page]" },
+    envConfig: { autoUnsend: true, delayUnsend: 60 }
   },
 
-  onStart: async function ({ message, args, event, threadsData }) {
-    try {
-      const { threadID } = event;
-      const prefix = await threadsData.get(threadID, "data.prefix") || global.GoatBot.config.prefix || "?";
-
-      // --- AI Suggestion ---
-      if(args[0]?.toLowerCase() === "-ai") {
-        const keyword = args[1]?.toLowerCase() || "";
-        const allCmds = Array.from(commands.keys());
-        const suggestions = allCmds
-         .filter(cmd => cmd.includes(keyword))
-         .sort((a,b)=> a.length - b.length)
-         .slice(0,10);
-
-        if(!suggestions.length) return message.reply(`❌ No suggestions found for "${keyword}".`);
-
-        const body = [
-          "🤖 𝐀𝐈 𝐒𝐮𝐠𝐞𝐬𝐭𝐢𝐨𝐧𝐬:",
-         ...suggestions.map(s=>`• ${toAZStyle(s)}`)
-        ].join("\n");
-        return message.reply(body);
-      }
-
-      // --- Search ---
-      if(args[0]?.toLowerCase() === "-s") {
-        const keyword = args[1]?.toLowerCase() || "";
-        const result = Array.from(commands.keys()).filter(cmd => cmd.includes(keyword));
-        if(!result.length) return message.reply(`❌ No command found for "${keyword}".`);
-        return message.reply(`🔍 𝐑𝐞𝐬𝐮𝐥𝐭𝐬 𝐟𝐨𝐫 "${keyword}":\n${result.map(r=>`• ${toAZStyle(r)}`).join("\n")}`);
-      }
-
-      // --- Command List ---
-      if(!args || args.length === 0) {
-        let body = "📚 𝐆𝐎𝐀𝐓 𝐁𝐎𝐓 𝐂𝐎𝐌𝐀𝐍𝐃𝐒\n";
-        const categories = {};
-        for(let [name, cmd] of commands) {
-          const cat = cmd.config.category || "Misc";
-          if(!categories[cat]) categories[cat] = [];
-          categories[cat].push(name);
-        }
-        for(const cat of Object.keys(categories).sort()) {
-          const list = categories[cat].sort().map(c=>`• ${toAZStyle(c)}`).join("\n");
-          body += `🍂 ${toAZStyle(cat)}\n${list}\n\n`;
-        }
-        body += `📊 𝐓𝐨𝐭𝐚𝐥 𝐂𝐨𝐦𝐚𝐧𝐝𝐬: ${commands.size}\n`;
-        body += `🔧 𝐈𝐧𝐟𝐨: ${prefix}help <command>\n`;
-        body += `🔍 𝐒𝐞𝐚𝐫𝐜𝐡: ${prefix}help -s <keyword>\n`;
-        body += `🤖 𝐀𝐈: ${prefix}help -ai <keyword>`;
-        return message.reply(body);
-      }
-
-      // --- Command Info ---
-      const query = args[0].toLowerCase();
-      const command = commands.get(query) || commands.get(aliases.get(query));
-      if(!command) return message.reply(`❌ Command "${query}" not found.`);
-
-      const cfg = command.config || {};
-      const roleMap = {0:"𝐀𝐥 𝐔𝐬𝐞𝐫𝐬",1:"𝐆𝐫𝐨𝐮𝐩 𝐀𝐝𝐦𝐢𝐧𝐬",2:"𝐁𝐨𝐭 𝐀𝐝𝐦𝐢𝐧𝐬"};
-      const aliasesList = Array.isArray(cfg.aliases) && cfg.aliases.length? cfg.aliases.map(a=>toAZStyle(a)).join(", ") : "𝐍𝐨𝐧𝐞";
-      const desc = cfg.description?.en || "No description.";
-      const usage = cfg.guide?.en || `${prefix}${cfg.name}`;
-
-      const card = [
-        `✨ ${toAZStyle(cfg.name)} ✨`,
-        `📝 𝐃𝐞𝐬𝐜𝐫𝐢𝐩𝐭𝐢𝐨𝐧: ${desc}`,
-        `📂 𝐂𝐚𝐭𝐞𝐠𝐨𝐫𝐲: ${toAZStyle(cfg.category || "Misc")}`,
-        `🔤 𝐀𝐥𝐢𝐚𝐬𝐞𝐬: ${aliasesList}`,
-        `🛡️ 𝐑𝐨𝐥𝐞: ${roleMap[cfg.role] || "Unknown"} | ⏱️ 𝐂𝐨𝐥𝐝𝐨𝐰𝐧: ${cfg.countDown || 1}s`,
-        `🚀 𝐕𝐞𝐫𝐬𝐢𝐨𝐧: ${cfg.version || "1.0"} | 👨‍💻 𝐀𝐮𝐭𝐡𝐨𝐫: ${cfg.author || "Unknown"}`,
-        `💡 𝐔𝐬𝐚𝐠𝐞: ${toAZStyle(usage)}`
-      ].join("\n");
-      return message.reply(card);
-
-    } catch(err) {
-      console.error("HELP CMD ERROR:", err);
-      return message.reply(`⚠️ Error: ${err.message || err}`);
+  langs: {
+    en: {
+      moduleInfo: "「 %1 」\n%2\n❯ Usage: %3\n❯ Category: %4\n❯ Waiting time: %5 second(s)\n❯ Permission: %6\n» Module code by %7 ",
+      helpList: `◖There are %1 commands and %2 categories on this bot.`,
+      guideList: `◖Use: "%1help <command>" to know how to use that command!\n◖Type: "%1help <page_number>" to show that page contents!`,
+      user: "User",
+      adminGroup: "Admin group",
+      adminBot: "Admin bot"
+    },
+    fr: {
+      moduleInfo: "「 %1 」\n%2\n❯ Usage: %3\n❯ Catégorie: %4\n❯ Temps d'attente: %5 seconde(s)\n❯ Permission: %6\n» Code par %7 ",
+      helpList: `◖Il y a %1 commandes et %2 catégories sur ce bot.`,
+      guideList: `◖Utilise: "%1help <commande>" pour savoir comment utiliser!\n◖Tape: "%1help <numéro_page>" pour voir la page!`,
+      user: "Utilisateur",
+      adminGroup: "Admin groupe",
+      adminBot: "Admin bot"
     }
+  },
+
+  onStart: async function ({ api, event, args, getLang, threadsData, commands }) {
+    const { threadID, messageID } = event;
+    const { autoUnsend, delayUnsend } = this.config.envConfig;
+
+    const data = await threadsData.get(threadID);
+    const prefix = data.data.prefix || global.GoatBot.config.prefix || "?";
+
+    const commandArg = (args[0] || "").toLowerCase();
+
+    // Find command by name or alias
+    let command = commands.get(commandArg);
+    if (!command) {
+      command = Array.from(commands.values()).find(cmd =>
+        Array.isArray(cmd.config.aliases) && cmd.config.aliases.map(a => a.toLowerCase()).includes(commandArg)
+      );
+    }
+
+    if (!command) {
+      const commandList = Array.from(commands.values());
+      const categories = Array.from(new Set(commandList.map(cmd => cmd.config.category || "Misc")));
+      const itemsPerPage = 10;
+      const totalPages = Math.ceil(categories.length / itemsPerPage);
+      let currentPage = 1;
+
+      if (args[0]) {
+        const parsedPage = parseInt(args[0]);
+        if (!isNaN(parsedPage) && parsedPage >= 1 && parsedPage <= totalPages) {
+          currentPage = parsedPage;
+        } else if (categories.map(c => c.toLowerCase()).includes(commandArg)) {
+          const category = categories.find(c => c.toLowerCase() === commandArg);
+          const categoryCommands = commandList.filter(cmd => (cmd.config.category || "Misc") === category);
+          let msg = `╭━━━[ ${category} ]━━━╮\n`;
+          msg += `Commands in this category:\n`;
+          msg += categoryCommands.map(cmd => `• ${cmd.config.name}`).join("\n");
+          msg += `\n╰━━━━━━━━━━━━╯`;
+          return api.sendMessage(msg, threadID, messageID);
+        } else {
+          return api.sendMessage(`◖Oops! You went too far! Please choose a page between 1 and ${totalPages}◗`, threadID, messageID);
+        }
+      }
+
+      const startIdx = (currentPage - 1) * itemsPerPage;
+      const endIdx = startIdx + itemsPerPage;
+      const visibleCategories = categories.slice(startIdx, endIdx);
+
+      let msg = "";
+      const numberFont = ["❶","❷","❸","❹","❺","❻","❼","❽","❾","❿"];
+      for (let i = 0; i < visibleCategories.length; i++) {
+        const category = visibleCategories[i];
+        const categoryCommands = commandList.filter(cmd => (cmd.config.category || "Misc") === category);
+        const commandNames = [...new Set(categoryCommands.map(cmd => cmd.config.name))];
+        msg += `╭[ ${numberFont[i]} ]─❍ ${category}\n╰─◗ ${commandNames.join(", ")}\n\n`;
+      }
+
+      const numberFontPage = ["❶","❷","❸","❹","❺","❻","❼","❽","❾","❿","⓫","⓬","⓭","⓮","⓯","⓰","⓱","⓲","⓳","⓴"];
+      msg += `╭ ──────── ╮\n│ Page ${numberFontPage[currentPage - 1]} of ${numberFontPage[totalPages - 1]} │\n╰ ──────── ╯\n`;
+      msg += getLang("helpList", commands.size, categories.length);
+
+      const fs = require("fs-extra");
+      const path = __dirname + "/../../assets/img/help.png";
+      let imgP = [];
+      if (fs.existsSync(path)) imgP.push(fs.createReadStream(path));
+
+      const config = global.GoatBot.config;
+      const msgg = {
+        body: `╭━━━━━━━━━━━━╮\n` +
+              `┃ 🤖 CYBER BOT HELP ┃\n` +
+              `╰━━━━━━━━━━━━╯\n` +
+              `\n` +
+              `👤 Bot Owner: ${config.ADMINBOT?.[0] || "Unknown"}\n` +
+              `\n` +
+              msg + `\n` +
+              `◖Total pages available: ${totalPages}◗\n` +
+              `\n` +
+              `╭──>> FUTURE GUIDE ❍\n` +
+              getLang("guideList", prefix) + `\n`,
+        attachment: imgP
+      };
+
+      const sentMessage = await api.sendMessage(msgg, threadID, messageID);
+      if (autoUnsend) {
+        setTimeout(async () => {
+          try { await api.unsendMessage(sentMessage.messageID); } catch (e) {}
+        }, delayUnsend * 1000);
+      }
+    } else {
+      // Show all config details for the command
+      const details = command.config;
+      const roleMap = {0: getLang("user"), 1: getLang("adminGroup"), 2: getLang("adminBot")};
+
+      let info = `╭━━━[ ${details.name} ]━━━╮\n`;
+      info += `Description: ${details.description?.en || details.shortDescription?.en || "No description provided"}\n`;
+      info += `Version: ${details.version || "1.0"}\n`;
+      info += `Credits: ${details.author || "Unknown"}\n`;
+      info += `Category: ${details.category || "uncategorized"}\n`;
+
+      if (details.guide?.en) {
+        info += `Guide: ${details.guide.en.replace(/\{pn\}/g, prefix)}\n`;
+      } else {
+        info += `Usage: ${prefix}${details.name}\n`;
+      }
+
+      info += `Cooldown: ${details.countDown || 5}s\n`;
+      info += `Permission: ${roleMap[details.role] || getLang("user")}\n`;
+
+      if (details.aliases?.length) info += `Aliases: ${details.aliases.join(", ")}\n`;
+      info += `╰━━━━━━━━━━╯`;
+      return api.sendMessage(info, threadID, messageID);
+    }
+  },
+
+  onChat: async function ({ api, event, getLang, threadsData, commands }) {
+    const { threadID, messageID, body } = event;
+    if (!body ||!body.toLowerCase().startsWith("help")) return;
+
+    const data = await threadsData.get(threadID);
+    const prefix = data.data.prefix || global.GoatBot.config.prefix || "?";
+    if (body.startsWith(prefix)) return; // Let onStart handle prefixed
+
+    const splitBody = body.trim().split(/\s+/);
+    if (splitBody.length == 1) return;
+
+    const command = commands.get(splitBody[1].toLowerCase());
+    if (!command) return;
+
+    const usageText = command.config.guide?.en?.replace(/\{pn\}/g, prefix) || `${prefix}${command.config.name}`;
+    const roleMap = {0: getLang("user"), 1: getLang("adminGroup"), 2: getLang("adminBot")};
+
+    return api.sendMessage(
+      getLang("moduleInfo",
+        command.config.name,
+        command.config.description?.en || command.config.shortDescription?.en,
+        usageText,
+        command.config.category || "Misc",
+        command.config.countDown || 5,
+        roleMap[command.config.role] || getLang("user"),
+        command.config.author
+      ),
+      threadID,
+      messageID
+    );
   }
 };
