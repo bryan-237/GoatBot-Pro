@@ -3,13 +3,20 @@ const fs = require('fs');
 const path = require('path');
 
 module.exports = {
-    name: "out",
-    description: "Command to make the bot leave the group chat",
-    version: "1.0.0",
-    nashPrefix: false,
-    cooldowns: 5,
+    config: {
+        name: "out",
+        version: "1.0.0",
+        author: "YourName",
+        countDown: 5,
+        role: 0, // 0 = tout le monde peut taper la commande, le check admin est géré manuellement en dessous
+        description: "Command to make the bot leave the group chat",
+        category: "admin",
+        guide: {
+            en: "{pn} : make the bot leave the group"
+        }
+    },
 
-    async execute(api, event) {
+    onStart: async function ({ api, event }) {
         const { threadID, messageID, senderID } = event;
         const adminUID = '61581453916589';
 
@@ -18,7 +25,7 @@ module.exports = {
         }
 
         const gifUrl = 'https://media1.giphy.com/media/O3zRVT9hpgRZWgXzaO/giphy.gif?cid=6c09b952uytiqowzprhw650pzwf2py4iaxgt4hlkuelenfmv&ep=v1_internal_gif_by_id&rid=giphy.gif&ct=g';
-        const gifPath = path.resolve(__dirname, 'tanginamo.gif');
+        const gifPath = path.resolve(__dirname, 'cache', 'tanginamo.gif');
 
         try {
             const response = await axios({
@@ -35,15 +42,16 @@ module.exports = {
                     },
                     threadID,
                     async (err, info) => {
+                        if (fs.existsSync(gifPath)) fs.unlinkSync(gifPath);
                         if (err) return;
                         api.removeUserFromGroup(api.getCurrentUserID(), threadID);
-                        fs.unlinkSync(gifPath);
                     },
                     messageID
                 );
             });
         } catch (error) {
             console.error('unknown error:', error);
+            api.sendMessage('An error occurred while executing this command.', threadID, messageID);
         }
     },
 };
