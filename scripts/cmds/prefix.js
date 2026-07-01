@@ -1,20 +1,26 @@
-module.exports = {
-  config: {
-    name: "prefix",
-    version: "1.0.0",
-    author: "Grandpa EJ",
-    countDown: 5,
-    role: 0,
-    shortDescription: { en: "Show current prefix" },
-    description: { en: "Show current prefix" },
-    category: "info",
-    guide: { en: "{pn}" }
-  },
+const fs = require('fs');
 
-  onStart: async function({ api, event, threadsData }) {
-    const { threadID, messageID } = event;
-    const data = await threadsData.get(threadID);
-    const currentPrefix = data.data.prefix || global.GoatBot.config.prefix || "?";
-    api.sendMessage(`Current prefix is: ${currentPrefix}`, threadID, messageID);
-  }
+module.exports = {
+  name: 'prefix',
+  description: 'Replies with the prefix',
+  nashPrefix: false,
+  execute(api, event, args, prefix) {
+    try {
+      const message = `Yo, my prefix is [ 𓆩 '${prefix}' 𓆪 ]\n\n𝗦𝗢𝗠𝗘 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 𝗧𝗛𝗔𝗧 𝗠𝗔𝗬 𝗛𝗘𝗟𝗣 𝗬𝗢𝗨:\n➥ '${prefix}help [command] -> information and usage of command\n\nHave fun using it, enjoy! ❤`;
+      
+      const imagePath = './josh.jpeg';
+
+      
+      if (fs.existsSync(imagePath)) {
+        const attachment = fs.createReadStream(imagePath);
+        api.sendMessage({ body: message, attachment }, event.threadID);
+      } else {
+        
+        api.sendMessage(message, event.threadID);
+      }
+    } catch (error) {
+      console.error('Error executing command:', error);
+      api.sendMessage('An error occurred while executing the command.', event.threadID);
+    }
+  },
 };
