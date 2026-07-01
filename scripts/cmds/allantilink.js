@@ -1,119 +1,87 @@
-import fetch from 'node-fetch'  
+const isLinkTik = /tiktok.com/i;
+const isLinkYt = /youtube.com|youtu.be/i;
+const isLinkTel = /telegram.com|t.me/i;
+const isLinkFb = /facebook.com|fb.me/i;
+const isLinkIg = /instagram.com/i;
+const isLinkTw = /twitter.com|x.com/i;
+const isLinkDc = /discord.com|discord.gg/i;
+const isLinkTh = /threads.net/i;
+const isLinkTch = /twitch.tv/i;
 
-const isLinkTik = /tiktok.com/i 
-const isLinkYt = /youtube.com|youtu.be/i 
-const isLinkTel = /telegram.com|t.me/i 
-const isLinkFb = /facebook.com|fb.me/i 
-const isLinkIg = /instagram.com/i 
-const isLinkTw = /twitter.com|x.com/i 
-const isLinkDc = /discord.com|discord.gg/i 
-const isLinkTh = /threads.net/i 
-const isLinkTch = /twitch.tv/i
-  
-let handler = m => m
-handler.before = async function (m, { conn, isAdmin, isBotAdmin, isOwner, isROwner }) {
-if (!m.isGroup) return 
-if (m.fromMe) return
-if (isAdmin || isOwner || isROwner || m.fromMe || !isBotAdmin) return
+module.exports = {
+  config: {
+    name: "antilink",
+    version: "1.0",
+    author: "BRYAN SABIN",
+    countDown: 0,
+    role: 0,
+    description: "Auto kick anti link social media",
+    category: "admin",
+    guide: { en: "{pn} on/off" }
+  },
 
-let chat = global.db.data.chats[m.chat]
-let bot = global.db.data.settings[this.user.jid] || {}
-let delet = m.key.participant
-let bang = m.key.id
-let toUser = `${m.sender.split("@")[0]}`
-let aa = toUser + '@s.whatsapp.net'
-    
-const isAntiLinkTik = isLinkTik.exec(m.text)
-const isAntiLinkYt = isLinkYt.exec(m.text)
-const isAntiLinkTel = isLinkTel.exec(m.text)
-const isAntiLinkFb = isLinkFb.exec(m.text)
-const isAntiLinkIg = isLinkIg.exec(m.text)
-const isAntiLinkTw = isLinkTw.exec(m.text)
-const isAntiLinkDc = isLinkDc.exec(m.text)
-const isAntiLinkTh = isLinkTh.exec(m.text)
-const isAntiLinkTch = isLinkTch.exec(m.text)
- 
-if (chat.antiTiktok && isAntiLinkTik) {  
-if (chat.delete) return conn.sendMessage(m.chat, { text: mid.mAdvertencia + mid.mAntiDelete }, { quoted: m })  
-if (isBotAdmin) {
-await conn.reply(m.chat, `${mid.mAdvertencia + mid.mTiktok} *@${toUser}*`, null, { mentions: [aa] })
-await conn.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: bang, participant: delet }})
-let remove = await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
-if (remove[0].status === '404') return
-}}
-    
-if (chat.antiYoutube && isAntiLinkYt) {
-if (chat.delete) return conn.sendMessage(m.chat, { text: mid.mAdvertencia + mid.mAntiDelete }, { quoted: m })  
-if (isBotAdmin) {
-await conn.reply(m.chat, `${mid.mAdvertencia + mid.mYoutube} *@${toUser}*`, null, { mentions: [aa] })
-await conn.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: bang, participant: delet }})
-let remove = await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
-if (remove[0].status === '404') return
-}}
-    
-if (chat.antiTelegram && isAntiLinkTel) {
-if (chat.delete) return conn.sendMessage(m.chat, { text: mid.mAdvertencia + mid.mAntiDelete }, { quoted: m })   
-if (isBotAdmin) {
-await conn.reply(m.chat, `${mid.mAdvertencia + mid.mTelegram} *@${toUser}*`, null, { mentions: [aa] })
-await conn.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: bang, participant: delet }})
-let remove = await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
-if (remove[0].status === '404') return
-}}
-    
-if (chat.antiFacebook && isAntiLinkFb) {
-if (chat.delete) return conn.sendMessage(m.chat, { text: mid.mAdvertencia + mid.mAntiDelete }, { quoted: m })  
-if (isBotAdmin) {
-await conn.reply(m.chat, `${mid.mAdvertencia + mid.mFacebook} *@${toUser}*`, null, { mentions: [aa] })
-await conn.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: bang, participant: delet }})
-let remove = await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
-if (remove[0].status === '404') return 
-}}
-    
-if (chat.antiInstagram && isAntiLinkIg) {
-if (chat.delete) return conn.sendMessage(m.chat, { text: mid.mAdvertencia + mid.mAntiDelete }, { quoted: m })  
-if (isBotAdmin) {
-await conn.reply(m.chat, `${mid.mAdvertencia + mid.mInstagram} *@${toUser}*`, null, { mentions: [aa] })
-await conn.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: bang, participant: delet }})
-let remove = await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
-if (remove[0].status === '404') return 
-}}
-    
-if (chat.antiTwitter && isAntiLinkTw) {
-if (chat.delete) return conn.sendMessage(m.chat, { text: mid.mAdvertencia + mid.mAntiDelete }, { quoted: m })  
-if (isBotAdmin) {
-await conn.reply(m.chat, `${mid.mAdvertencia + mid.mX} *@${toUser}*`, null, { mentions: [aa] })
-await conn.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: bang, participant: delet }})
-let remove = await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
-if (remove[0].status === '404') return
-}}
+  onChat: async function ({ api, event, threadsData, message }) {
+    const { threadID, senderID, body, messageID, participantIDs } = event;
+    if (!body) return;
+    if (senderID == api.getCurrentUserID()) return; // fromMe
 
-if (chat.antiDiscord && isAntiLinkDc) {
-if (chat.delete) return conn.sendMessage(m.chat, { text: mid.mAdvertencia + mid.mAntiDelete }, { quoted: m })  
-if (isBotAdmin) {
-await conn.reply(m.chat, `${mid.mAdvertencia + mid.mDiscord} *@${toUser}*`, null, { mentions: [aa] })
-await conn.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: bang, participant: delet }})
-let remove = await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
-if (remove[0].status === '404') return
-}}
+    const threadData = await threadsData.get(threadID);
+    const isBotAdmin = participantIDs.includes(api.getCurrentUserID());
+    const isAdmin = threadData.adminIDs?.includes(senderID);
+    const chat = threadData.data || {};
 
-if (chat.antiThreads && isAntiLinkTh) {
-if (chat.delete) return conn.sendMessage(m.chat, { text: mid.mAdvertencia + mid.mAntiDelete }, { quoted: m })  
-if (isBotAdmin) {
-await conn.reply(m.chat, `${mid.mAdvertencia + mid.mThreads} *@${toUser}*`, null, { mentions: [aa] })
-await conn.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: bang, participant: delet }})
-let remove = await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
-if (remove[0].status === '404') return
-}}
+    if (isAdmin ||!isBotAdmin) return; // Admin bypass | Bot pas admin = rien
 
-if (chat.antiTwitch && isAntiLinkTch) {
-if (chat.delete) return conn.sendMessage(m.chat, { text: mid.mAdvertencia + mid.mAntiDelete }, { quoted: m })  
-if (isBotAdmin) {
-await conn.reply(m.chat, `${mid.mAdvertencia + mid.mTwitch} *@${toUser}*`, null, { mentions: [aa] })
-await conn.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: bang, participant: delet }})
-let remove = await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
-if (remove[0].status === '404') return
-}}
+    const toUser = senderID.split("@")[0];
+    const mentions = [{ id: senderID, tag: `@${toUser}` }];
 
-return !0
-}
-export default handler
+    const isAntiLinkTik = isLinkTik.exec(body);
+    const isAntiLinkYt = isLinkYt.exec(body);
+    const isAntiLinkTel = isLinkTel.exec(body);
+    const isAntiLinkFb = isLinkFb.exec(body);
+    const isAntiLinkIg = isLinkIg.exec(body);
+    const isAntiLinkTw = isLinkTw.exec(body);
+    const isAntiLinkDc = isLinkDc.exec(body);
+    const isAntiLinkTh = isLinkTh.exec(body);
+    const isAntiLinkTch = isLinkTch.exec(body);
+
+    const kickUser = async (type) => {
+      if (chat.delete) return api.sendMessage(`⚠️ Lien détecté mais mode delete activé`, threadID, messageID);
+      
+      await api.sendMessage({ body: `⚠️ Anti-Link | ${type} interdit\nTag: @${toUser}`, mentions }, threadID);
+      await api.deleteMessage(messageID); // delete msg
+      try {
+        await api.removeUserFromGroup(senderID, threadID); // kick
+      } catch (e) {
+        console.log("Kick failed 404:", e.message);
+      }
+    };
+
+    if (chat.antiTiktok && isAntiLinkTik) return kickUser("TikTok");
+    if (chat.antiYoutube && isAntiLinkYt) return kickUser("YouTube");
+    if (chat.antiTelegram && isAntiLinkTel) return kickUser("Telegram");
+    if (chat.antiFacebook && isAntiLinkFb) return kickUser("Facebook");
+    if (chat.antiInstagram && isAntiLinkIg) return kickUser("Instagram");
+    if (chat.antiTwitter && isAntiLinkTw) return kickUser("Twitter/X");
+    if (chat.antiDiscord && isAntiLinkDc) return kickUser("Discord");
+    if (chat.antiThreads && isAntiLinkTh) return kickUser("Threads");
+    if (chat.antiTwitch && isAntiLinkTch) return kickUser("Twitch");
+  },
+
+  onStart: async function ({ message, args, threadsData, event }) {
+    const { threadID } = event;
+    if (!args[0]) return message.reply("Usage: antilink on/off");
+    
+    const data = await threadsData.get(threadID, "data") || {};
+    if (args[0] === "on") {
+      data.antiTiktok = data.antiYoutube = data.antiTelegram = data.antiFacebook = true;
+      data.antiInstagram = data.antiTwitter = data.antiDiscord = data.antiThreads = data.antiTwitch = true;
+      await threadsData.set(threadID, data, "data");
+      return message.reply("✅ AntiLink ON: Tous les réseaux activés | BRYAN SABIN");
+    }
+    if (args[0] === "off") {
+      await threadsData.set(threadID, {}, "data");
+      return message.reply("❌ AntiLink OFF");
+    }
+  }
+};
